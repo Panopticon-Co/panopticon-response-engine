@@ -32,6 +32,26 @@ def test_terminate_process_fails_closed_with_no_start_time_data() -> None:
     assert translate_recommendation("TERMINATE_PROCESS", {"target_pid": 123}) is None
 
 
+def test_terminate_process_maps_to_kill_process_with_a_valid_start_time() -> None:
+    assert translate_recommendation(
+        "TERMINATE_PROCESS", {"target_pid": 123, "target_start_time_ticks": 456789}
+    ) == ("KILL_PROCESS", {"pid": 123, "start_time_ticks": 456789}, "direct mapping")
+
+
+def test_terminate_process_fails_closed_with_a_zero_start_time() -> None:
+    assert translate_recommendation("TERMINATE_PROCESS", {"target_pid": 123, "target_start_time_ticks": 0}) is None
+
+
+def test_terminate_process_fails_closed_with_a_negative_start_time() -> None:
+    assert translate_recommendation("TERMINATE_PROCESS", {"target_pid": 123, "target_start_time_ticks": -1}) is None
+
+
+def test_terminate_process_fails_closed_with_wrong_typed_fields() -> None:
+    assert translate_recommendation("TERMINATE_PROCESS", {"target_pid": "123", "target_start_time_ticks": 456}) is None
+    assert translate_recommendation("TERMINATE_PROCESS", {"target_pid": 123, "target_start_time_ticks": "456"}) is None
+    assert translate_recommendation("TERMINATE_PROCESS", {"target_pid": True, "target_start_time_ticks": 456}) is None
+
+
 def test_isolate_host_is_a_direct_mapping() -> None:
     assert translate_recommendation("ISOLATE_HOST", {}) == ("ISOLATE_HOST", {}, "direct mapping")
 

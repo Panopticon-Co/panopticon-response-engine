@@ -23,15 +23,24 @@ def translate_recommendation(
     safely be produced.
     """
     if action == "TERMINATE_PROCESS":
-        # No known detection engine recommendation payload carries a
-        # process-creation timestamp yet -- the closed contract's
-        # KILL_PROCESS target requires start_time_ticks specifically to
-        # prevent PID-reuse (killing/collecting on the wrong process after
-        # the original pid was reused), so this always fails closed rather
-        # than ever guessing a start time. Fixing this requires the
-        # detection engine to carry that data through its own recommendation
-        # payload -- not a workaround here. See docs/OWNERSHIP.md.
-        return None
+        # The closed contract's KILL_PROCESS target requires start_time_ticks
+        # specifically to prevent PID-reuse (killing the wrong process after
+        # the original pid was recycled by the OS). See docs/adr/002 for why
+        # this value is an opaque, OS-native, pass-through-only token: it is
+        # never valid unless the detection engine actually observed it on the
+        # originating agent's telemetry, so a missing/wrong-typed/zero value
+        # must always fail closed rather than ever being guessed or defaulted.
+        pid = active_response.get("target_pid")
+        start_time_ticks = active_response.get("target_start_time_ticks")
+        if (
+            not isinstance(pid, int)
+            or isinstance(pid, bool)
+            or not isinstance(start_time_ticks, int)
+            or isinstance(start_time_ticks, bool)
+            or start_time_ticks <= 0
+        ):
+            return None
+        return "KILL_PROCESS", {"pid": pid, "start_time_ticks": start_time_ticks}, "direct mapping"
     if action == "ISOLATE_HOST":
         return "ISOLATE_HOST", {}, "direct mapping"
     if action == "BLOCK_FIREWALL_IP":
