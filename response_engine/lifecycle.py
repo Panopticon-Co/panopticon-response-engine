@@ -36,11 +36,14 @@ terminal states. This means:
     stage produced them. A future Manager change could rename
     ``response_actions``' REJECTED to CANCELLED without any wire-contract
     impact, since that column is never exposed to an agent.
-  - ACCEPTED is not implemented in Manager today -- there is no distinct
-    "agent has received and is about to execute" acknowledgement separate
-    from a terminal result. ``is_legal_transition`` still models it, so a
-    future Manager change adding it has a defined, tested target to build
-    against, and does not have to invent the rule from scratch.
+  - ACCEPTED is implemented in Manager via an optional acknowledgement
+    endpoint (``POST /api/v1/agents/{agent_id}/commands/{command_id}/accept``,
+    ``manager/routers/commands.py``): DISPATCHED -> ACCEPTED. It is optional,
+    not a second incompatible protocol -- an agent that never calls it can
+    still submit a result straight from DISPATCHED; Manager treats a result
+    submitted while in either DISPATCHED or ACCEPTED as legal. Once a result
+    lands, or the command is swept to EXPIRED, neither accept() nor a second
+    result submission can move the state again.
 
 This module validates *transitions*, not persistence. It is the reusable
 place that rule lives so multiple consumers of this contract don't each
