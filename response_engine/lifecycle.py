@@ -41,9 +41,16 @@ terminal states. This means:
     ``manager/routers/commands.py``): DISPATCHED -> ACCEPTED. It is optional,
     not a second incompatible protocol -- an agent that never calls it can
     still submit a result straight from DISPATCHED; Manager treats a result
-    submitted while in either DISPATCHED or ACCEPTED as legal. Once a result
-    lands, or the command is swept to EXPIRED, neither accept() nor a second
-    result submission can move the state again.
+    submitted while in either DISPATCHED or ACCEPTED as legal. Because of
+    this, DISPATCHED -> {SUCCEEDED, FAILED, REJECTED} is a legal transition
+    below, not only DISPATCHED -> ACCEPTED -- an earlier revision of this
+    module modeled ACCEPTED as a mandatory waypoint and was inconsistent
+    with Manager's real, intentional, already-tested behavior
+    (``test_result_without_prior_accept_still_works``); this module's job is
+    to describe the real contract, not a stricter one no implementation
+    actually enforces. Once a result lands, or the command is swept to
+    EXPIRED, neither accept() nor a second result submission can move the
+    state again.
 
 This module validates *transitions*, not persistence. It is the reusable
 place that rule lives so multiple consumers of this contract don't each
@@ -82,7 +89,16 @@ _LEGAL_TRANSITIONS: dict[ResponseActionState, frozenset[ResponseActionState]] = 
         {ResponseActionState.AUTHORIZED, ResponseActionState.CANCELLED}
     ),
     ResponseActionState.AUTHORIZED: frozenset({ResponseActionState.DISPATCHED}),
-    ResponseActionState.DISPATCHED: frozenset({ResponseActionState.ACCEPTED}),
+    ResponseActionState.DISPATCHED: frozenset(
+        {
+            ResponseActionState.ACCEPTED,
+            # An agent may skip the optional accept() acknowledgement and
+            # report an outcome directly -- see the module docstring.
+            ResponseActionState.SUCCEEDED,
+            ResponseActionState.FAILED,
+            ResponseActionState.REJECTED,
+        }
+    ),
     ResponseActionState.ACCEPTED: frozenset(
         {
             ResponseActionState.SUCCEEDED,

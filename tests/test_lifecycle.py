@@ -15,6 +15,12 @@ S = ResponseActionState
         (S.ACCEPTED, S.SUCCEEDED),
         (S.ACCEPTED, S.FAILED),
         (S.ACCEPTED, S.REJECTED),
+        # An agent may skip the optional accept() acknowledgement and report
+        # an outcome straight from DISPATCHED -- see the module docstring
+        # and panopticon-manager's test_result_without_prior_accept_still_works.
+        (S.DISPATCHED, S.SUCCEEDED),
+        (S.DISPATCHED, S.FAILED),
+        (S.DISPATCHED, S.REJECTED),
     ],
 )
 def test_legal_transitions(current: S, requested: S) -> None:
@@ -47,9 +53,6 @@ def test_terminal_states_have_no_outbound_transitions(current: S) -> None:
         (S.AUTHORIZED, S.SUCCEEDED),
         # Cannot dispatch something still PENDING (must be AUTHORIZED first).
         (S.PENDING, S.DISPATCHED),
-        # Cannot jump straight to a terminal outcome from DISPATCHED,
-        # skipping ACCEPTED.
-        (S.DISPATCHED, S.SUCCEEDED),
         # Cannot cancel something already authorized/dispatched -- CANCELLED
         # is only reachable from PENDING.
         (S.AUTHORIZED, S.CANCELLED),
