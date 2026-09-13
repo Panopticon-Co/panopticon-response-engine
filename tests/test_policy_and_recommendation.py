@@ -57,6 +57,46 @@ def test_terminate_process_fails_closed_with_wrong_typed_fields() -> None:
     assert translate_recommendation("TERMINATE_PROCESS", boolean_pid) is None
 
 
+def test_collect_process_info_maps_to_itself_with_a_valid_start_time() -> None:
+    assert translate_recommendation(
+        "COLLECT_PROCESS_INFO", {"target_pid": 123, "target_start_time_ticks": 456789}
+    ) == ("COLLECT_PROCESS_INFO", {"pid": 123, "start_time_ticks": 456789}, "direct mapping")
+
+
+def test_collect_process_info_fails_closed_with_no_start_time_data() -> None:
+    assert translate_recommendation("COLLECT_PROCESS_INFO", {"target_pid": 123}) is None
+
+
+def test_collect_process_info_fails_closed_with_a_zero_start_time() -> None:
+    active_response = {"target_pid": 123, "target_start_time_ticks": 0}
+    assert translate_recommendation("COLLECT_PROCESS_INFO", active_response) is None
+
+
+def test_collect_process_info_fails_closed_with_wrong_typed_fields() -> None:
+    string_pid = {"target_pid": "123", "target_start_time_ticks": 456}
+    boolean_start_time = {"target_pid": 123, "target_start_time_ticks": True}
+    assert translate_recommendation("COLLECT_PROCESS_INFO", string_pid) is None
+    assert translate_recommendation("COLLECT_PROCESS_INFO", boolean_start_time) is None
+
+
+def test_collect_network_connections_is_a_direct_mapping_with_no_target() -> None:
+    assert translate_recommendation("COLLECT_NETWORK_CONNECTIONS", {}) == (
+        "COLLECT_NETWORK_CONNECTIONS",
+        {},
+        "direct mapping",
+    )
+
+
+def test_collect_network_connections_ignores_extraneous_active_response_fields() -> None:
+    # No-target action: an incidentally-present target_ip must not leak into
+    # the produced target, matching the closed contract's {} shape.
+    assert translate_recommendation("COLLECT_NETWORK_CONNECTIONS", {"target_ip": "1.2.3.4"}) == (
+        "COLLECT_NETWORK_CONNECTIONS",
+        {},
+        "direct mapping",
+    )
+
+
 def test_isolate_host_is_a_direct_mapping() -> None:
     assert translate_recommendation("ISOLATE_HOST", {}) == ("ISOLATE_HOST", {}, "direct mapping")
 

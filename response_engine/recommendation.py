@@ -41,6 +41,25 @@ def translate_recommendation(
         ):
             return None
         return "KILL_PROCESS", {"pid": pid, "start_time_ticks": start_time_ticks}, "direct mapping"
+    if action == "COLLECT_PROCESS_INFO":
+        # Same PID-reuse-safety requirement as TERMINATE_PROCESS -- collecting
+        # info about a since-recycled pid would be misleading to an analyst,
+        # so this fails closed identically rather than only guarding the
+        # destructive action.
+        pid = active_response.get("target_pid")
+        start_time_ticks = active_response.get("target_start_time_ticks")
+        if (
+            not isinstance(pid, int)
+            or isinstance(pid, bool)
+            or not isinstance(start_time_ticks, int)
+            or isinstance(start_time_ticks, bool)
+            or start_time_ticks <= 0
+        ):
+            return None
+        target = {"pid": pid, "start_time_ticks": start_time_ticks}
+        return "COLLECT_PROCESS_INFO", target, "direct mapping"
+    if action == "COLLECT_NETWORK_CONNECTIONS":
+        return "COLLECT_NETWORK_CONNECTIONS", {}, "direct mapping"
     if action == "ISOLATE_HOST":
         return "ISOLATE_HOST", {}, "direct mapping"
     if action == "BLOCK_FIREWALL_IP":
