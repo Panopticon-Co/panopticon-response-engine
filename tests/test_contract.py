@@ -118,3 +118,48 @@ def test_command_result_forbids_unknown_fields() -> None:
     CommandResult(result_id="r1", command_id="c1", outcome="succeeded")
     with pytest.raises(ValidationError):
         CommandResult(result_id="r1", command_id="c1", outcome="succeeded", extra="x")
+
+
+def test_oversized_identifiers_are_rejected_at_the_boundary() -> None:
+    """Adversarial boundary-length coverage: exactly one character past each
+    Field(max_length=...) bound must fail closed, not merely "very large"
+    inputs -- an attacker probes boundaries, not round numbers."""
+    with pytest.raises(ValidationError):
+        Command(
+            command_id="c" * 129,
+            agent_id="a1",
+            action="ISOLATE_HOST",
+            expires_at=_future(),
+            target={},
+        )
+    with pytest.raises(ValidationError):
+        Command(
+            command_id="c1",
+            agent_id="a" * 129,
+            action="ISOLATE_HOST",
+            expires_at=_future(),
+            target={},
+        )
+    with pytest.raises(ValidationError):
+        Command(
+            command_id="c1",
+            agent_id="a1",
+            action="COLLECT_FILE",
+            expires_at=_future(),
+            target={"path": "x" * 4097},
+        )
+    with pytest.raises(ValidationError):
+        CommandResult(result_id="r" * 129, command_id="c1", outcome="succeeded")
+    with pytest.raises(ValidationError):
+        CommandResult(result_id="r1", command_id="c1", outcome="succeeded", detail="d" * 513)
+
+
+def test_empty_identifiers_are_rejected() -> None:
+    """The other boundary direction: min_length=1 fields must reject empty
+    strings, not silently accept an identity-less command/result."""
+    with pytest.raises(ValidationError):
+        Command(
+            command_id="", agent_id="a1", action="ISOLATE_HOST", expires_at=_future(), target={}
+        )
+    with pytest.raises(ValidationError):
+        CommandResult(result_id="", command_id="c1", outcome="succeeded")
