@@ -15,6 +15,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          # tests/vendor/panopticon-contracts is a git submodule holding the
+          # canonical cross-repo fixtures tests/test_contract_fixtures.py
+          # loads -- without this, actions/checkout leaves it as an empty
+          # directory and every fixture-consumption test fails with
+          # FileNotFoundError.
+          submodules: true
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
