@@ -1,0 +1,3 @@
+[submodule "tests/vendor/panopticon-contracts"]
+	path = tests/vendor/panopticon-contracts
+	url = https://github.com/Panopticon-Co/panopticon-contracts.git
