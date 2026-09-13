@@ -16,6 +16,11 @@ include = ["response_engine*"]
 
 [tool.ruff]
 line-length = 100
+# tests/vendor/panopticon-contracts is a git submodule (a separate repository
+# with its own lint policy) vendored only so tests/test_contract_fixtures.py
+# can load its golden fixtures -- it is not this package's own source and
+# must not be linted as if it were.
+exclude = ["tests/vendor"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]

@@ -39,17 +39,22 @@ def test_terminate_process_maps_to_kill_process_with_a_valid_start_time() -> Non
 
 
 def test_terminate_process_fails_closed_with_a_zero_start_time() -> None:
-    assert translate_recommendation("TERMINATE_PROCESS", {"target_pid": 123, "target_start_time_ticks": 0}) is None
+    active_response = {"target_pid": 123, "target_start_time_ticks": 0}
+    assert translate_recommendation("TERMINATE_PROCESS", active_response) is None
 
 
 def test_terminate_process_fails_closed_with_a_negative_start_time() -> None:
-    assert translate_recommendation("TERMINATE_PROCESS", {"target_pid": 123, "target_start_time_ticks": -1}) is None
+    active_response = {"target_pid": 123, "target_start_time_ticks": -1}
+    assert translate_recommendation("TERMINATE_PROCESS", active_response) is None
 
 
 def test_terminate_process_fails_closed_with_wrong_typed_fields() -> None:
-    assert translate_recommendation("TERMINATE_PROCESS", {"target_pid": "123", "target_start_time_ticks": 456}) is None
-    assert translate_recommendation("TERMINATE_PROCESS", {"target_pid": 123, "target_start_time_ticks": "456"}) is None
-    assert translate_recommendation("TERMINATE_PROCESS", {"target_pid": True, "target_start_time_ticks": 456}) is None
+    string_pid = {"target_pid": "123", "target_start_time_ticks": 456}
+    string_start_time = {"target_pid": 123, "target_start_time_ticks": "456"}
+    boolean_pid = {"target_pid": True, "target_start_time_ticks": 456}
+    assert translate_recommendation("TERMINATE_PROCESS", string_pid) is None
+    assert translate_recommendation("TERMINATE_PROCESS", string_start_time) is None
+    assert translate_recommendation("TERMINATE_PROCESS", boolean_pid) is None
 
 
 def test_isolate_host_is_a_direct_mapping() -> None:
