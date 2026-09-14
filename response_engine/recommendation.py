@@ -17,10 +17,14 @@ def translate_recommendation(
     action: str, active_response: dict[str, Any]
 ) -> tuple[str, dict[str, Any], str] | None:
     """Maps a detection engine's recommendation action (e.g. eyedetect's
-    ActiveResponseAction.action vocabulary: TERMINATE_PROCESS, ISOLATE_HOST,
-    BLOCK_FIREWALL_IP) onto the closed 7-action Command enum. Returns
+    ActiveResponseAction.action vocabulary: TERMINATE_PROCESS,
+    COLLECT_PROCESS_INFO, COLLECT_NETWORK_CONNECTIONS, QUARANTINE_FILE,
+    ISOLATE_HOST) onto the closed 7-action Command enum. Returns
     (command_action, target, decided_reason) or None if no command can
-    safely be produced.
+    safely be produced. Any recommendation string outside this vocabulary
+    (e.g. "BLOCK_FIREWALL_IP") produces None -- this function never
+    substitutes a different, unrelated closed-set action for one it cannot
+    translate.
     """
     if action == "TERMINATE_PROCESS":
         # The closed contract's KILL_PROCESS target requires start_time_ticks
@@ -73,12 +77,15 @@ def translate_recommendation(
         return "QUARANTINE_FILE", {"path": target_file}, "direct mapping"
     if action == "ISOLATE_HOST":
         return "ISOLATE_HOST", {}, "direct mapping"
-    if action == "BLOCK_FIREWALL_IP":
-        # Locked decision: no 8th action. Coarser than per-IP blocking, but
-        # stays within the closed, security-reviewed action set.
-        return (
-            "ISOLATE_HOST",
-            {},
-            "BLOCK_FIREWALL_IP has no equivalent action; downgraded to ISOLATE_HOST",
-        )
+    # "BLOCK_FIREWALL_IP" (eyedetect's C2-egress recommendation string) has no
+    # equivalent in the closed 7-action set. This package previously
+    # "downgraded" it to a real ISOLATE_HOST command -- silently substituting
+    # full host isolation for what the detection engine actually recommended
+    # (a narrow, IP-scoped block). That is exactly the opportunistic
+    # unrelated-action mapping this contract's fail-closed design exists to
+    # prevent: an analyst approving what looks like a routine response could
+    # unknowingly authorize taking an entire host offline. There is no 8th
+    # action and no per-IP block in the closed set, so this now falls through
+    # to the same `return None` as any other unrecognized action: no command
+    # is produced, and the alert remains visible with no active_response.
     return None

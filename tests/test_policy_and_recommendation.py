@@ -101,11 +101,13 @@ def test_isolate_host_is_a_direct_mapping() -> None:
     assert translate_recommendation("ISOLATE_HOST", {}) == ("ISOLATE_HOST", {}, "direct mapping")
 
 
-def test_block_firewall_ip_downgrades_to_isolate_host() -> None:
-    action, target, reason = translate_recommendation("BLOCK_FIREWALL_IP", {"target_ip": "1.2.3.4"})
-    assert action == "ISOLATE_HOST"
-    assert target == {}
-    assert "downgraded" in reason
+def test_block_firewall_ip_fails_closed_rather_than_downgrading_to_isolate_host() -> None:
+    # BLOCK_FIREWALL_IP has no equivalent in the closed 7-action set.
+    # Substituting ISOLATE_HOST for it would let an analyst unknowingly
+    # authorize full host isolation for what was recommended as a narrow,
+    # IP-scoped block -- exactly the opportunistic unrelated-action mapping
+    # this contract exists to prevent. No command may be produced instead.
+    assert translate_recommendation("BLOCK_FIREWALL_IP", {"target_ip": "1.2.3.4"}) is None
 
 
 def test_unknown_recommendation_returns_none() -> None:
