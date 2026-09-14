@@ -60,6 +60,17 @@ def translate_recommendation(
         return "COLLECT_PROCESS_INFO", target, "direct mapping"
     if action == "COLLECT_NETWORK_CONNECTIONS":
         return "COLLECT_NETWORK_CONNECTIONS", {}, "direct mapping"
+    if action == "QUARANTINE_FILE":
+        # Same fail-closed shape as the process actions above: the closed
+        # contract's QUARANTINE_FILE target requires a non-empty path, and a
+        # missing/wrong-typed one must never be guessed or defaulted -- the
+        # detection engine only ever populates target_file from the actual
+        # triggering event's file.path, so a missing value here means no
+        # command can safely be produced.
+        target_file = active_response.get("target_file")
+        if not isinstance(target_file, str) or not target_file:
+            return None
+        return "QUARANTINE_FILE", {"path": target_file}, "direct mapping"
     if action == "ISOLATE_HOST":
         return "ISOLATE_HOST", {}, "direct mapping"
     if action == "BLOCK_FIREWALL_IP":

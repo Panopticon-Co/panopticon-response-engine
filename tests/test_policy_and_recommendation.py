@@ -110,3 +110,24 @@ def test_block_firewall_ip_downgrades_to_isolate_host() -> None:
 
 def test_unknown_recommendation_returns_none() -> None:
     assert translate_recommendation("SOMETHING_ELSE", {}) is None
+
+
+def test_quarantine_file_maps_to_itself_with_a_valid_path() -> None:
+    action, target, reason = translate_recommendation(
+        "QUARANTINE_FILE", {"target_file": "/etc/rc.local"}
+    )
+    assert action == "QUARANTINE_FILE"
+    assert target == {"path": "/etc/rc.local"}
+    assert reason == "direct mapping"
+
+
+def test_quarantine_file_fails_closed_with_no_target_file() -> None:
+    assert translate_recommendation("QUARANTINE_FILE", {}) is None
+
+
+def test_quarantine_file_fails_closed_with_an_empty_target_file() -> None:
+    assert translate_recommendation("QUARANTINE_FILE", {"target_file": ""}) is None
+
+
+def test_quarantine_file_fails_closed_with_a_wrong_typed_target_file() -> None:
+    assert translate_recommendation("QUARANTINE_FILE", {"target_file": 12345}) is None
