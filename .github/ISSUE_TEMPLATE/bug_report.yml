@@ -1,0 +1,40 @@
+name: Bug Report
+description: Report incorrect behavior in the response contract, policy, translation, or lifecycle logic
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for helping improve panopticon-response-engine!
+  - type: dropdown
+    id: module
+    attributes:
+      label: Affected module
+      options:
+        - response_engine.contract
+        - response_engine.policy
+        - response_engine.recommendation
+        - response_engine.lifecycle
+        - Not sure / other
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: What unexpected behavior occurred?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: A minimal code snippet or failing test is ideal.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment Info
+      placeholder: Python version, OS
+    validations:
+      required: false

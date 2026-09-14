@@ -1,0 +1,33 @@
+name: Feature Request
+description: Propose a change to the response contract, policy, or lifecycle logic
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for your interest! Note that the 7-action set, the locked auto-fire tiers, and the
+        fail-closed translation behavior are intentional, security-reviewed constraints — see
+        docs/OWNERSHIP.md and CONTRIBUTING.md before proposing a change to them.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / Gap
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed Solution
+    validations:
+      required: true
+  - type: checkboxes
+    id: constraints
+    attributes:
+      label: Constraint check
+      options:
+        - label: This does not add an 8th response action
+          required: true
+        - label: This does not weaken a locked ANALYST_APPROVAL tier to AUTO_SAFE
+          required: true
+        - label: This does not add I/O, network, or OS-execution code to response_engine/
+          required: true
