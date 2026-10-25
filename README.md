@@ -78,10 +78,10 @@ RELEASE_HOST_ISOLATION
 ```
 
 This set is locked. There is no 8th action, no free-form execute/shell path, and no arbitrary
-command string. `BLOCK_FIREWALL_IP` recommendations from the detection engine are deliberately
-**downgraded** to `ISOLATE_HOST` — coarser than per-IP blocking, but this is an intentional,
-documented decision to stay within the closed, security-reviewed action set (see
-`response_engine/recommendation.py`), not a bug or a gap to "fix" by adding an 8th action.
+command string. A recommendation outside the translatable vocabulary — including
+`BLOCK_FIREWALL_IP` — produces **no command**: `translate_recommendation` fails closed and returns
+`None` (see `response_engine/recommendation.py`). It is never substituted with a larger-blast-radius
+action such as `ISOLATE_HOST`, and the gap is not "fixed" by adding an 8th action.
 
 ## Detection / execution / response boundary
 
@@ -171,8 +171,7 @@ in the consuming service (`panopticon-manager`).
 - `COLLECT_FILE` has no operator-configured path allowlist implemented yet, so it defaults to
   `ANALYST_APPROVAL` rather than a scoped `AUTO_SAFE` carve-out (see `response_engine/policy.py`).
   This is documented future work, not a bug.
-- `BLOCK_FIREWALL_IP` is coarser than per-IP blocking by design (downgraded to `ISOLATE_HOST`) — see
-  above; this is a locked decision, not a gap.
+- There is no per-IP block: `BLOCK_FIREWALL_IP` fails closed (no command), by design — see above.
 - The lifecycle model is idealized; `panopticon-manager`'s real persistence spans two tables and
   compresses `CANCELLED` into `REJECTED` in one of them. See the docstring in
   `response_engine/lifecycle.py` for the exact mapping.
