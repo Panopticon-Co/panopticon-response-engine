@@ -10,11 +10,55 @@ translate produces no command, full stop.
 
 from __future__ import annotations
 
+import hashlib
+import re
 from typing import Any
 
 
+def _canonical_process_target(context: Any, recommendation: dict[str, Any]) -> dict | None:
+    if not isinstance(context, dict):
+        return None
+    endpoint = context.get("endpoint")
+    subject = context.get("subject")
+    if not isinstance(endpoint, dict) or not isinstance(subject, dict):
+        return None
+    host, boot = endpoint.get("host_id"), endpoint.get("boot_id")
+    pid, ticks = subject.get("observed_pid"), subject.get("native_creation_ticks")
+    if (
+        not isinstance(host, str)
+        or not host
+        or not isinstance(boot, str)
+        or not re.fullmatch(r"boot_[0-9a-f]{64}", boot)
+        or subject.get("boot_id") != boot
+        or subject.get("resolution") != "native_exact"
+        or type(pid) is not int
+        or not 0 < pid <= 0xFFFFFFFF
+        or not isinstance(ticks, str)
+        or not re.fullmatch(r"[1-9][0-9]{0,19}", ticks)
+        or int(ticks) > 0xFFFFFFFFFFFFFFFF
+    ):
+        return None
+    fields = ["native-process-instance-v1", host, boot, str(pid), ticks]
+    material = "".join(str(len(field.encode("utf-8"))) + ":" + field for field in fields)
+    expected = "proc_" + hashlib.sha256(material.encode("utf-8")).hexdigest()
+    if subject.get("entity_id") != expected:
+        return None
+    observed_ticks = recommendation.get("target_start_time_ticks")
+    if (
+        type(recommendation.get("target_pid")) is not int
+        or recommendation["target_pid"] != pid
+        or type(observed_ticks) is not int
+        or observed_ticks != int(ticks)
+        or recommendation.get("host_id", host) != host
+    ):
+        return None
+    return {"pid": pid, "start_time_ticks": ticks, "boot_id": boot}
+
+
 def translate_recommendation(
-    action: str, active_response: dict[str, Any]
+    action: str,
+    active_response: dict[str, Any],
+    endpoint_context: Any = None,
 ) -> tuple[str, dict[str, Any], str] | None:
     """Maps a detection engine's recommendation action (e.g. eyedetect's
     ActiveResponseAction.action vocabulary: TERMINATE_PROCESS,
@@ -26,6 +70,12 @@ def translate_recommendation(
     substitutes a different, unrelated closed-set action for one it cannot
     translate.
     """
+    if endpoint_context is not None and action in {"TERMINATE_PROCESS", "COLLECT_PROCESS_INFO"}:
+        target = _canonical_process_target(endpoint_context, active_response)
+        if target is None:
+            return None
+        mapped = "KILL_PROCESS" if action == "TERMINATE_PROCESS" else action
+        return mapped, target, "verified canonical native process target"
     if action == "TERMINATE_PROCESS":
         # The closed contract's KILL_PROCESS target requires start_time_ticks
         # specifically to prevent PID-reuse (killing the wrong process after
