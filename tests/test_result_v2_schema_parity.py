@@ -3,6 +3,7 @@ agree on every golden execution fixture: both accept the valid ones and both
 refuse the invalid ones. Disagreement means one side of the contract drifted."""
 
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -12,12 +13,13 @@ from response_engine.contract import CommandResult
 
 jsonschema = pytest.importorskip("jsonschema")
 
-CONTRACTS = Path(__file__).resolve().parent / "vendor" / "panopticon-contracts"
-SCHEMA = CONTRACTS / "schema" / "command-result-v2.schema.json"
-FIXTURES = CONTRACTS / "fixtures" / "results" / "execution-v2.json"
+CONTRACTS = Path(os.environ.get("PANOPTICON_CONTRACTS_DIR",
+    str(Path(__file__).resolve().parent / "vendor" / "panopticon-contracts")))
+SCHEMA = CONTRACTS / "schema" / "command_result.schema.json"
+FIXTURES = CONTRACTS / "fixtures" / "v2" / "results" / "execution.json"
 
 pytestmark = pytest.mark.skipif(
-    not SCHEMA.is_file(), reason="vendored contracts lack command-result-v2"
+    not FIXTURES.is_file(), reason="vendored contracts lack command-result-v2"
 )
 
 

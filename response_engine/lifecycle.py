@@ -3,7 +3,7 @@
 This is the idealized, single-response-action state machine the driving
 specification locks:
 
-    PENDING -> AUTHORIZED -> DISPATCHED -> ACCEPTED -> SUCCEEDED | FAILED | REJECTED
+    PENDING -> AUTHORIZED -> DISPATCHED -> ACCEPTED -> SUCCEEDED | FAILED | REJECTED | INDETERMINATE
     PENDING -> CANCELLED
     ANY -> EXPIRED
 
@@ -70,6 +70,7 @@ class ResponseActionState(str, Enum):
     SUCCEEDED = "SUCCEEDED"
     FAILED = "FAILED"
     REJECTED = "REJECTED"
+    INDETERMINATE = "INDETERMINATE"
     CANCELLED = "CANCELLED"
     EXPIRED = "EXPIRED"
 
@@ -79,6 +80,7 @@ _TERMINAL = frozenset(
         ResponseActionState.SUCCEEDED,
         ResponseActionState.FAILED,
         ResponseActionState.REJECTED,
+        ResponseActionState.INDETERMINATE,
         ResponseActionState.CANCELLED,
         ResponseActionState.EXPIRED,
     }
@@ -97,6 +99,7 @@ _LEGAL_TRANSITIONS: dict[ResponseActionState, frozenset[ResponseActionState]] = 
             ResponseActionState.SUCCEEDED,
             ResponseActionState.FAILED,
             ResponseActionState.REJECTED,
+            ResponseActionState.INDETERMINATE,
         }
     ),
     ResponseActionState.ACCEPTED: frozenset(
@@ -104,6 +107,7 @@ _LEGAL_TRANSITIONS: dict[ResponseActionState, frozenset[ResponseActionState]] = 
             ResponseActionState.SUCCEEDED,
             ResponseActionState.FAILED,
             ResponseActionState.REJECTED,
+            ResponseActionState.INDETERMINATE,
         }
     ),
     # Every non-terminal state may also transition to EXPIRED (a bounded
@@ -112,6 +116,7 @@ _LEGAL_TRANSITIONS: dict[ResponseActionState, frozenset[ResponseActionState]] = 
     ResponseActionState.SUCCEEDED: frozenset(),
     ResponseActionState.FAILED: frozenset(),
     ResponseActionState.REJECTED: frozenset(),
+    ResponseActionState.INDETERMINATE: frozenset(),
     ResponseActionState.CANCELLED: frozenset(),
     ResponseActionState.EXPIRED: frozenset(),
 }

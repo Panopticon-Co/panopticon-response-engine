@@ -21,6 +21,8 @@ S = ResponseActionState
         (S.DISPATCHED, S.SUCCEEDED),
         (S.DISPATCHED, S.FAILED),
         (S.DISPATCHED, S.REJECTED),
+        (S.DISPATCHED, S.INDETERMINATE),
+        (S.ACCEPTED, S.INDETERMINATE),
     ],
 )
 def test_legal_transitions(current: S, requested: S) -> None:
@@ -37,7 +39,7 @@ def test_any_non_terminal_state_can_expire(current: S) -> None:
 
 @pytest.mark.parametrize(
     "current",
-    [S.SUCCEEDED, S.FAILED, S.REJECTED, S.CANCELLED, S.EXPIRED],
+    [S.SUCCEEDED, S.FAILED, S.REJECTED, S.INDETERMINATE, S.CANCELLED, S.EXPIRED],
 )
 def test_terminal_states_have_no_outbound_transitions(current: S) -> None:
     for requested in S:
@@ -51,6 +53,8 @@ def test_terminal_states_have_no_outbound_transitions(current: S) -> None:
         # terminal outcome or to ACCEPTED.
         (S.AUTHORIZED, S.ACCEPTED),
         (S.AUTHORIZED, S.SUCCEEDED),
+        (S.AUTHORIZED, S.INDETERMINATE),
+        (S.PENDING, S.INDETERMINATE),
         # Cannot dispatch something still PENDING (must be AUTHORIZED first).
         (S.PENDING, S.DISPATCHED),
         # Cannot cancel something already authorized/dispatched -- CANCELLED
