@@ -17,12 +17,13 @@ package does and does not own.
 
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from enum import Enum
 from typing import Literal
 from uuid import uuid4
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_serializer, model_validator
 
 Action = Literal[
     "KILL_PROCESS",
@@ -54,15 +55,18 @@ _FILE_ACTIONS = {"COLLECT_FILE", "QUARANTINE_FILE"}
 
 class Command(BaseModel):
     """A single typed, dispatchable command. Identical validation rules to
-    the ones this contract replaces in panopticon-manager -- process actions
+    the ones this contract replaces in panopticon-manager for version 1 -- process actions
     require exactly ``{pid, start_time_ticks}`` (the latter specifically to
     reject PID-reuse: an agent must refuse to act on a pid whose start time
     no longer matches), file actions require exactly ``{path}``, and every
     other action must carry no target at all. ``extra="forbid"`` means no
-    consumer can smuggle an additional, unvalidated field onto the wire."""
+    consumer can smuggle an additional, unvalidated field onto the wire.
+    Windows version 2 requires exact native boot and decimal uint64 creation
+    ticks; it does not extend the closed action vocabulary."""
 
     model_config = ConfigDict(extra="forbid")
     command_id: str = Field(min_length=1, max_length=128)
+    schema_version: Literal["1", "2"] = "1"
     agent_id: str = Field(min_length=1, max_length=128)
     action: Action
     expires_at: datetime
@@ -71,6 +75,31 @@ class Command(BaseModel):
 
     @model_validator(mode="after")
     def enforce_closed_target_schema(self) -> "Command":
+        if self.schema_version == "2":
+            if self.expires_at.tzinfo is None or self.expires_at.utcoffset() is None:
+                raise ValueError("schema-2 expiration requires an aware timestamp")
+            if self.action not in _PROCESS_ACTIONS or set(self.target) != {
+                "pid",
+                "start_time_ticks",
+                "boot_id",
+            }:
+                raise ValueError("schema-2 requires a boot-bound process action target")
+            pid = self.target["pid"]
+            ticks = self.target["start_time_ticks"]
+            boot = self.target["boot_id"]
+            if not isinstance(pid, int) or isinstance(pid, bool) or not 0 < pid <= 0xFFFFFFFF:
+                raise ValueError("schema-2 process PID must be a positive uint32")
+            if (
+                not isinstance(ticks, str)
+                or not re.fullmatch(r"[1-9][0-9]{0,19}", ticks)
+                or int(ticks) > 0xFFFFFFFFFFFFFFFF
+            ):
+                raise ValueError(
+                    "schema-2 native ticks require a canonical positive uint64 decimal string"
+                )
+            if not isinstance(boot, str) or not re.fullmatch(r"boot_[0-9a-f]{64}", boot):
+                raise ValueError("schema-2 process boot identity is invalid")
+            return self
         if self.action in _PROCESS_ACTIONS:
             if set(self.target) != {"pid", "start_time_ticks"}:
                 raise ValueError("process action target must contain only pid and start_time_ticks")
@@ -95,6 +124,21 @@ class ResultOutcome(str, Enum):
     SUCCEEDED = "succeeded"
     FAILED = "failed"
     REJECTED = "rejected"
+    INDETERMINATE = "indeterminate"
+
+
+class ProcessExecutionEvidence(BaseModel):
+    """Conclusive native process-action facts; crash recovery may omit this object."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+    representation: Literal["windows_process_termination_v1"]
+    stage: Literal[
+        "preflight", "boot", "open", "identity", "image", "critical",
+        "protection", "liveness", "initiate", "completion",
+    ]
+    action_initiated: bool
+    completion_observed: bool
+    native_error: int | None = Field(ge=0, le=0xFFFFFFFF)
 
 
 class CommandResult(BaseModel):
@@ -104,8 +148,46 @@ class CommandResult(BaseModel):
     that), not this contract's -- this only defines the wire shape."""
 
     model_config = ConfigDict(extra="forbid")
+    schema_version: Literal["1", "2"] = "1"
     result_id: str = Field(min_length=1, max_length=128)
     command_id: str = Field(min_length=1, max_length=128)
-    outcome: Literal["succeeded", "rejected", "failed"]
+    outcome: Literal["succeeded", "rejected", "failed", "indeterminate"]
     detail: str | None = Field(default=None, max_length=512)
     correlation_id: str | None = Field(default=None, min_length=1, max_length=128)
+    execution: ProcessExecutionEvidence | None = None
+
+    @model_serializer(mode="wrap")
+    def omit_absent_execution(self, handler):
+        serialized = handler(self)
+        if self.execution is None:
+            serialized.pop("execution", None)
+        return serialized
+
+    @model_validator(mode="after")
+    def versioned_outcome(self) -> "CommandResult":
+        if self.outcome == "indeterminate" and self.schema_version != "2":
+            raise ValueError("indeterminate outcome requires result schema 2")
+        if self.schema_version == "2" and self.correlation_id is None:
+            raise ValueError("result schema 2 requires command correlation")
+        if "execution" in self.model_fields_set:
+            if self.schema_version != "2" or self.execution is None:
+                raise ValueError("execution evidence requires schema 2 and a non-null object")
+            evidence = self.execution
+            if evidence.action_initiated != (evidence.stage == "completion"):
+                raise ValueError("process completion stage requires initiated action")
+            expected = (
+                "succeeded" if evidence.completion_observed
+                else "indeterminate" if evidence.action_initiated
+                else None
+            )
+            if expected is not None and self.outcome != expected:
+                raise ValueError("outcome contradicts process execution facts")
+            if evidence.completion_observed and not evidence.action_initiated:
+                raise ValueError("observed action completion requires initiated action")
+            if expected is None and self.outcome not in ("failed", "rejected"):
+                raise ValueError("uninitiated process action cannot claim success or uncertainty")
+            if evidence.native_error is not None and self.outcome not in (
+                "failed", "indeterminate"
+            ):
+                raise ValueError("native error contradicts successful/refused process action")
+        return self
