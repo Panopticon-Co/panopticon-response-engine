@@ -51,19 +51,56 @@ qualification. Deployment still requires explicitly provisioned command keys.
 - Domain/Manager/Console checks and CI pass before dependency-ordered merges.
 - Record shipped PRs and residual work here for continuation.
 
+## Shipped Linux response integration wave
+
+Merged with PR CI passing: contracts PR 6, domain PR 7, Manager PRs 15–17,
+Console PR 11. Local checks: 77 valid and 73 invalid central Linux fixtures;
+177 domain tests plus 14 subtests; 78 focused ingestion/worker/response checks;
+28 focused evidence/readiness/migration checks; 66 Console Python tests and nine
+Node suites. No manual/native/full-system E2E was run.
+
+- The existing organization Linux schema, policy/tamper/response evidence and
+  retained fixtures now live on central contracts default branch. Manager's
+  compatibility mirror is checked against central schema and all fixtures.
+- Authenticated Linux ingestion retains immutable originals and reports exact
+  accepted/duplicate/rejected-line counts. Fixed the older branch's line-less
+  conflict ACK. Proper migrations replace request-time DDL. Host binding is
+  rechecked inside the write transaction; oversized sequence integers are explicit
+  per-line refusals rather than batch failures.
+- Durable Linux process detection shares bounded worker capacity with Windows
+  and legacy records. Lease recovery, per-record poisoning and scoped replay
+  deduplication have regressions. Existing retained processes queue once.
+- Per-record Linux alerts carry their own identity model and native record/entity
+  proof. Process targets preserve boot/PID/start ticks and full 64-bit precision;
+  invalid/inferred/aggregate identity cannot fall back to legacy PID targeting.
+  Existing manual staging, authorization, signing and enrollment checks apply.
+- Analyst cases show retained response.action reports with explicit correlation,
+  action, host, process/file target and boot comparisons. Telemetry never changes
+  command state. Preview is bounded; full exports include original JSON strings
+  and SHA-256. Console emphasizes dry runs and linkage disagreements.
+- Readiness shows existing Linux command-channel policy snapshots with capture
+  and receive time. Freshness remains unverified and current enforcement mode
+  unknown. This is partial capability visibility, not completed live capability
+  negotiation. Windows collection coverage is not response capability evidence.
+
 ## Following milestones, in priority order
 
-1. Reconcile the mature Linux sensor's telemetry/response provenance with central
-   contracts. Its Manager `feat/linux-command-signing` branch also contains a
-   separate Linux ingestion implementation; this sprint intentionally ported only
-   command authority, not that ingestion branch. Audit and integrate the relevant
-   pieces without parallel competing schema ownership.
-2. Explicit response capability and policy reports from both native runtimes,
-   including enforcement mode and per-action support, with freshness semantics.
-3. Structured investigation artifact transfer and custody into analyst views.
-4. Per-browser analyst sessions/identity-gateway integration and endpoint scopes.
-5. Bounded multi-step playbooks with explicit approval gates, followed by endpoint
-   execution reconciliation and fleet operations.
+1. Explicit response capability/policy reports from both native runtimes. Use a
+   centrally governed, bounded report generated from actual runtime configuration,
+   bound to an authenticated current command-channel interaction (not replayable
+   WAL telemetry). Distinguish implemented actions, policy-allowed actions,
+   off/dry-run/enforce mode, boot binding and signature requirements. Define stale
+   and missing report behavior; retain endpoint enforcement and never infer OS
+   execution from a report. Current Linux health snapshots are advisory only.
+2. Structured investigation artifact transfer and custody into analyst views.
+   Current native response telemetry/detail and custody of its original records
+   are shipped; acquisition/upload/storage of collected file artifacts is not.
+3. Per-browser analyst sessions/identity-gateway integration and endpoint scopes.
+   Console still uses the server-configured analyst token; roles are not a
+   substitute for separate browser identities.
+4. Bounded multi-step playbooks with explicit approval gates, followed by endpoint
+   execution reconciliation and fleet operations. Campaigns currently stage
+   independent items and do not execute a sequential playbook.
 
 The user has deferred E2E testing. Continue implementation/unit/contract/API and
 existing CI checks; do not turn that deferral into a reason to stop development.
