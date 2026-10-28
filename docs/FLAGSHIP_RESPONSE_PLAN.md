@@ -12,7 +12,14 @@ Completed foundation: central telemetry schemas, seven-action catalog, manual
 requests, queued cancellation, roles/separate approval, retry identity, immutable
 decision history, outcome filters and case exports (Manager PRs 10–13).
 
-## Current implementation sprint
+## Shipped implementation sprint
+
+Merged: contracts PR 5, domain PR 5, Manager PR 14, Console PR 10. PR CI passed
+before each merge. Local focused checks: 151 domain tests plus 14 subtests,
+112 Manager API/contract regressions (2 platform/native skips), 66 Console Python
+tests and eight Node suites. No manual/native E2E runs were performed. The local
+UI preview was started with `--preview-only`; it does not run response workflow
+qualification. Deployment still requires explicitly provisioned command keys.
 
 1. **Command authority:** integrate the organization's existing Linux ES256 signing
    work (`feat/linux-command-signing`, ADR 008) into current Manager without
@@ -44,11 +51,21 @@ decision history, outcome filters and case exports (Manager PRs 10–13).
 - Domain/Manager/Console checks and CI pass before dependency-ordered merges.
 - Record shipped PRs and residual work here for continuation.
 
-## Following milestones
+## Following milestones, in priority order
 
-Per-browser analyst sessions/identity-gateway integration; capability reports from
-both endpoint runtimes; structured investigation artifact transfer and custody;
-bounded automation playbooks with explicit approval gates; endpoint execution
-reconciliation and fleet operations. Keep these visible rather than claiming
-commercial parity from a set of API/UI features. Revisit prioritization after this
-sprint's code ships. The current seven native actions remain the closed baseline.
+1. Reconcile the mature Linux sensor's telemetry/response provenance with central
+   contracts. Its Manager `feat/linux-command-signing` branch also contains a
+   separate Linux ingestion implementation; this sprint intentionally ported only
+   command authority, not that ingestion branch. Audit and integrate the relevant
+   pieces without parallel competing schema ownership.
+2. Explicit response capability and policy reports from both native runtimes,
+   including enforcement mode and per-action support, with freshness semantics.
+3. Structured investigation artifact transfer and custody into analyst views.
+4. Per-browser analyst sessions/identity-gateway integration and endpoint scopes.
+5. Bounded multi-step playbooks with explicit approval gates, followed by endpoint
+   execution reconciliation and fleet operations.
+
+The user has deferred E2E testing. Continue implementation/unit/contract/API and
+existing CI checks; do not turn that deferral into a reason to stop development.
+Keep remaining work visible rather than claiming commercial parity from API/UI
+features. The seven native actions remain the closed baseline.
