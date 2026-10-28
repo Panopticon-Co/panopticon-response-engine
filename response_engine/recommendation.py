@@ -14,6 +14,8 @@ import hashlib
 import re
 from typing import Any
 
+from response_engine.linux_identity import MODEL, verified_linux_subject
+
 
 def _canonical_process_target(context: Any, recommendation: dict[str, Any]) -> dict | None:
     if not isinstance(context, dict):
@@ -41,7 +43,10 @@ def _canonical_process_target(context: Any, recommendation: dict[str, Any]) -> d
     fields = ["native-process-instance-v1", host, boot, str(pid), ticks]
     material = "".join(str(len(field.encode("utf-8"))) + ":" + field for field in fields)
     expected = "proc_" + hashlib.sha256(material.encode("utf-8")).hexdigest()
-    if subject.get("entity_id") != expected:
+    if context.get("identity_model") == MODEL:
+        if not verified_linux_subject(context):
+            return None
+    elif subject.get("entity_id") != expected:
         return None
     observed_ticks = recommendation.get("target_start_time_ticks")
     if (
