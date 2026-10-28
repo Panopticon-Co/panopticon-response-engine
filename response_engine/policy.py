@@ -12,6 +12,9 @@ from __future__ import annotations
 
 from enum import Enum
 
+# Bounded analyst staging; each item still requires its own authorization.
+MAX_CAMPAIGN_ACTIONS = 25
+
 
 class Tier(str, Enum):
     AUTO_SAFE = "AUTO_SAFE"
