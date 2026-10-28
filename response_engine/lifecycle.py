@@ -26,7 +26,8 @@ terminal states. This means:
     (meaning "translated into a commands row"), REJECTED, or EXPIRED.
   - ``commands.lifecycle_state`` only ever takes AUTHORIZED, DISPATCHED, or
     a terminal state (SUCCEEDED/FAILED/REJECTED/EXPIRED).
-  - Manager does not currently store a distinct CANCELLED value anywhere --
+  - Manager stores CANCELLED for commands atomically cancelled before dispatch.
+    For pending recommendations,
     an analyst declining a still-PENDING response_actions row is recorded as
     REJECTED, which is this state machine's CANCELLED concept (a pre-dispatch
     decline) reusing the terminal-outcome REJECTED string. This is a known,
@@ -90,7 +91,9 @@ _LEGAL_TRANSITIONS: dict[ResponseActionState, frozenset[ResponseActionState]] = 
     ResponseActionState.PENDING: frozenset(
         {ResponseActionState.AUTHORIZED, ResponseActionState.CANCELLED}
     ),
-    ResponseActionState.AUTHORIZED: frozenset({ResponseActionState.DISPATCHED}),
+    ResponseActionState.AUTHORIZED: frozenset(
+        {ResponseActionState.DISPATCHED, ResponseActionState.CANCELLED}
+    ),
     ResponseActionState.DISPATCHED: frozenset(
         {
             ResponseActionState.ACCEPTED,
