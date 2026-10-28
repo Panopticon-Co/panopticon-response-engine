@@ -10,6 +10,7 @@ S = ResponseActionState
     [
         (S.PENDING, S.AUTHORIZED),
         (S.PENDING, S.CANCELLED),
+        (S.AUTHORIZED, S.CANCELLED),
         (S.AUTHORIZED, S.DISPATCHED),
         (S.DISPATCHED, S.ACCEPTED),
         (S.ACCEPTED, S.SUCCEEDED),
@@ -57,9 +58,7 @@ def test_terminal_states_have_no_outbound_transitions(current: S) -> None:
         (S.PENDING, S.INDETERMINATE),
         # Cannot dispatch something still PENDING (must be AUTHORIZED first).
         (S.PENDING, S.DISPATCHED),
-        # Cannot cancel something already authorized/dispatched -- CANCELLED
-        # is only reachable from PENDING.
-        (S.AUTHORIZED, S.CANCELLED),
+        # Cancellation after dispatch cannot promise execution was prevented.
         (S.DISPATCHED, S.CANCELLED),
     ],
 )
