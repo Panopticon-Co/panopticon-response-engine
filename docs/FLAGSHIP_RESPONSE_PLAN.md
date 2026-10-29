@@ -83,24 +83,50 @@ Node suites. No manual/native/full-system E2E was run.
   unknown. This is partial capability visibility, not completed live capability
   negotiation. Windows collection coverage is not response capability evidence.
 
+## Shipped current native runtime policy wave
+
+Merged green: contracts PR7, Linux PR2, Windows PR7, Manager PR18, Console PR12.
+Both native producers report current configuration through authenticated command
+polls independently of queued telemetry. Reports distinguish implemented/allowed
+actions, mode, boot identity and signature requirements. Manager receive-time
+freshness expires after 300 seconds, omission clears it, and host rebind invalidates
+it. Missing or stale reports stay unknown for legacy compatibility.
+
+Policy gates run at actual authorization and delivery. Off/disallowed/unsupported
+operations, changing actions in dry-run mode and mismatched process boots are
+withheld. SQL filters before the delivery limit so blocked work cannot starve
+permitted collection. Signature requirements retain ES256 demand. Console exposes
+current/stale policy and held-delivery reasons, alongside existing approvals,
+requests, cancellation, campaigns and evidence. Native verification remains the
+execution authority; Windows explicitly reports its current signing limitation.
+
+Validation: Manager 76 focused regressions and 29 profile checks; Console 66 Python
+tests and ten Node suites; Linux native/sanitizer CI; Windows native Debug build
+and response CTest plus full Debug/Release PR CI (48 tests per configuration).
+Initial Windows Release CI exposed an existing USN fixture assumption about
+named-stream creation versus content changes. The repaired fixture performs
+write-through/flush/close and verifies creation plus a separate overwrite; both
+configurations passed at 1f1035a before merge. No tests were disabled. Local USN
+components passed but native volume access was denied, so live journal proof
+comes from existing CI. No manual/full-system E2E was run.
+
 ## Following milestones, in priority order
 
-1. Explicit response capability/policy reports from both native runtimes. Use a
-   centrally governed, bounded report generated from actual runtime configuration,
-   bound to an authenticated current command-channel interaction (not replayable
-   WAL telemetry). Distinguish implemented actions, policy-allowed actions,
-   off/dry-run/enforce mode, boot binding and signature requirements. Define stale
-   and missing report behavior; retain endpoint enforcement and never infer OS
-   execution from a report. Current Linux health snapshots are advisory only.
-2. Structured investigation artifact transfer and custody into analyst views.
-   Current native response telemetry/detail and custody of its original records
-   are shipped; acquisition/upload/storage of collected file artifacts is not.
-3. Per-browser analyst sessions/identity-gateway integration and endpoint scopes.
-   Console still uses the server-configured analyst token; roles are not a
-   substitute for separate browser identities.
-4. Bounded multi-step playbooks with explicit approval gates, followed by endpoint
-   execution reconciliation and fleet operations. Campaigns currently stage
+1. Structured investigation artifact transfer and custody into analyst views.
+   Follow STRUCTURED_ARTIFACT_PLAN.md for a bounded first slice: existing process,
+   network and file-metadata collections produce durable JSON artifacts; uploads
+   bind exact command, host and correlation; retained bytes have SHA-256 and
+   append-only custody; analysts inspect/download from the Console. Do not silently
+   expand COLLECT_FILE into binary acquisition. Full file-byte acquisition remains
+   a later explicit extension to this work.
+2. Per-browser analyst sessions/identity-gateway integration and endpoint scopes.
+   Console still uses the server-configured analyst token; roles do not substitute
+   for distinct browser identities.
+3. Bounded multi-step playbooks with explicit approval gates, followed by endpoint
+   execution reconciliation and fleet operations. Existing campaigns stage
    independent items and do not execute a sequential playbook.
+4. Remaining trust and production hardening: Windows signature verification parity,
+   artifact retention/storage operations, sustained-load and recovery qualification.
 
 The user has deferred E2E testing. Continue implementation/unit/contract/API and
 existing CI checks; do not turn that deferral into a reason to stop development.
