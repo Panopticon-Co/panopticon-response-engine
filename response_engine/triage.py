@@ -115,7 +115,7 @@ class EndpointCapability(Closed):
     mode: Literal["off", "dry_run", "enforce"]
     implemented_actions: list[Action] = Field(max_length=7)
     allowed_actions: list[Action] = Field(max_length=7)
-    signed_command_channel: StrictBool
+    authenticated_command_channel: StrictBool
     artifact_protocol: Literal["signed-json-v2-resume-v1"] | None
 
 
@@ -181,8 +181,8 @@ def evaluate(
         return result("skip", "endpoint_policy_denied")
     if endpoint.mode != "enforce":
         return result("skip", "endpoint_not_enforcing")
-    if not endpoint.signed_command_channel:
-        return result("skip", "signed_command_channel_required")
+    if not endpoint.authenticated_command_channel:
+        return result("skip", "authenticated_command_channel_required")
     if endpoint.artifact_protocol != ARTIFACT_PROTOCOL:
         return result("skip", "signed_artifact_delivery_not_supported")
     if action == "COLLECT_PROCESS_INFO" and process_identity_verified is not True:
