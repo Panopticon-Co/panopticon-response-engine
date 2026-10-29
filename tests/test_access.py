@@ -22,3 +22,18 @@ def test_artifact_scope_administration_never_grants_response_approval():
     assert P.DECIDE not in permissions_for("artifact_admin")
     for role in ("viewer", "responder", "approver", "analyst"):
         assert P.ARTIFACT_SCOPE_MANAGE not in permissions_for(role)
+
+
+def test_closed_analyst_roles_match_central_enrollment_contract():
+    import json
+    from pathlib import Path
+
+    from response_engine.access import AnalystRole
+
+    schema = json.loads(
+        (
+            Path(__file__).parent / "vendor/panopticon-contracts/schema/"
+            "analyst-enrollment.schema.json"
+        ).read_text()
+    )
+    assert set(schema["properties"]["role"]["enum"]) == {role.value for role in AnalystRole}
