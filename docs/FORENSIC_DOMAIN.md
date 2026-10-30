@@ -1,8 +1,9 @@
 # Forensic collection domain support
 
 `response_engine.forensics` adds opt-in, deterministic collection planning and
-metadata validation to the existing pure library. It does not wire a new workflow
-into Manager. Existing translation, action enums, tiers, lifecycle states, public
+metadata validation to the existing pure library. Platform integration lives in
+Manager's `manager/forensic_context.py`, not this module. Existing translation,
+action enums, tiers, lifecycle states, public
 imports and central command/artifact contracts are unchanged.
 
 ## Existing facilities reused
@@ -125,8 +126,9 @@ binding as well as the explicit expectation.
 
 ## Integration requirements and limits
 
-This module is available through explicit imports; it is not automatically called
-by existing Manager or detection paths. To consume it later, Manager must:
+This module is available through explicit imports. Manager's forensic adapter
+calls it from response staging and signed artifact admission, then exposes scoped
+case context to Console. The following integration requirements remain mandatory:
 
 1. Build provenance/targets from retained alert records and authoritative endpoint
    identities, not user-provided claims. Resolve exact case/command ownership for
@@ -145,7 +147,9 @@ by existing Manager or detection paths. To consume it later, Manager must:
 
 No Manager adapter, API, database, agent changes, dashboard changes, binary
 acquisition, memory dump, packet capture, new response action, shell or subprocess
-execution is included. Such collection or UI integration needs a separate task;
+execution is included in this pure-library repository. The platform adapter and
+Console case view live in their respective repositories. Additional collection
+techniques need separate scope;
 the response library cannot collect OS facts itself. Existing consumers continue
 using the same public interfaces and receive no new wire fields automatically.
 
