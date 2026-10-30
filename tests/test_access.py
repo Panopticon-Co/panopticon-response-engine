@@ -17,7 +17,7 @@ def test_roles_separate_request_from_approval_and_unknown_roles_fail_closed():
 def test_artifact_scope_administration_never_grants_response_approval():
     from response_engine.access import ACCESS_POLICY_VERSION
 
-    assert ACCESS_POLICY_VERSION == 2
+    assert ACCESS_POLICY_VERSION == 3
     assert P.ARTIFACT_SCOPE_MANAGE in permissions_for("artifact_admin")
     assert P.DECIDE not in permissions_for("artifact_admin")
     for role in ("viewer", "responder", "approver", "analyst"):
@@ -37,3 +37,9 @@ def test_closed_analyst_roles_match_central_enrollment_contract():
         ).read_text()
     )
     assert set(schema["properties"]["role"]["enum"]) == {role.value for role in AnalystRole}
+
+
+def test_triage_administration_cannot_approve_responses_or_read_evidence():
+    assert permissions_for("triage_admin") == frozenset({P.TRIAGE_MANAGE})
+    for role in ("viewer", "responder", "approver", "analyst", "artifact_admin"):
+        assert P.TRIAGE_MANAGE not in permissions_for(role)
