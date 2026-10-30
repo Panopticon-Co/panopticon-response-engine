@@ -10,7 +10,9 @@ This package owns:
   - translation from a detection engine's recommendation vocabulary onto the
     closed command action set (``response_engine.recommendation``);
   - the canonical response lifecycle state machine
-    (``response_engine.lifecycle``).
+    (``response_engine.lifecycle``);
+  - the deterministic automated-response policy and incident response status
+    (``response_engine.automation``).
 
 It deliberately owns nothing else. It has no HTTP framework dependency, no
 database/persistence code, and no OS-specific execution logic -- those stay
@@ -25,6 +27,13 @@ install (see that repo's docs/adr/006-response-engine-package-extraction.md)
 -- one deployable backend, no network RPC, no separate service.
 """
 
+from response_engine.automation import (
+    DEFAULT_POLICIES,
+    PolicyDecision,
+    ResponsePolicy,
+    derive_response_status,
+    evaluate_policy,
+)
 from response_engine.contract import (
     ACTIONS,
     Action,
@@ -41,6 +50,11 @@ from response_engine.recommendation import translate_recommendation
 
 __all__ = [
     "ACTIONS",
+    "DEFAULT_POLICIES",
+    "PolicyDecision",
+    "ResponsePolicy",
+    "derive_response_status",
+    "evaluate_policy",
     "Action",
     "Command",
     "CommandResult",

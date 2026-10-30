@@ -13,7 +13,7 @@ This is a capstone/research security project component, not a commercial product
 
 ## Status / maturity
 
-Working, tested domain library: 69 tests passing (`pytest -v`), `ruff check .` clean. It has one
+Working, tested domain library (see CI for the current test count) (`pytest -v`), `ruff check .` clean. It has one
 consumer today, [`panopticon-manager`](https://github.com/Panopticon-Co/panopticon-manager), which
 vendors it as a pinned git submodule and installs it editable into its own process.
 
@@ -60,6 +60,12 @@ translate.
   `PENDING -> AUTHORIZED -> DISPATCHED -> ACCEPTED -> {SUCCEEDED, FAILED, REJECTED}` (plus
   `CANCELLED` and `EXPIRED`) state machine. See the module docstring for how Manager's real,
   two-table persistence maps onto this idealized model.
+
+- **`response_engine.automation`** — `evaluate_policy`: the deterministic automated-response
+  policy (rule/level/confidence/evidence gates → `record` / `simulate` / `approval` / `auto` /
+  `denied`), which can never select an action itself or auto-fire a non-`AUTO_SAFE` action, and
+  `derive_response_status`, which keeps simulated, executed and verified containment distinct.
+  See [`docs/AUTOMATED_RESPONSE.md`](docs/AUTOMATED_RESPONSE.md).
 
 See [`docs/OWNERSHIP.md`](docs/OWNERSHIP.md) for the exact boundary (what this package owns vs.
 explicitly does not) and [`docs/adr/001-repository-boundary.md`](docs/adr/001-repository-boundary.md)
