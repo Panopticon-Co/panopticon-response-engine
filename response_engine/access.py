@@ -2,7 +2,7 @@
 
 from enum import Enum
 
-ACCESS_POLICY_VERSION = 2
+ACCESS_POLICY_VERSION = 3
 
 
 class AnalystRole(str, Enum):
@@ -11,6 +11,7 @@ class AnalystRole(str, Enum):
     APPROVER = "approver"
     ANALYST = "analyst"
     ARTIFACT_ADMIN = "artifact_admin"
+    TRIAGE_ADMIN = "triage_admin"
 
 
 class AnalystPermission(str, Enum):
@@ -19,9 +20,11 @@ class AnalystPermission(str, Enum):
     INVESTIGATE = "incident:write"
     ARTIFACT_READ = "artifact:read"
     ARTIFACT_SCOPE_MANAGE = "artifact:scope:manage"
+    TRIAGE_MANAGE = "triage:manage"
 
 
 _PERMISSIONS = {
+    AnalystRole.TRIAGE_ADMIN: frozenset({AnalystPermission.TRIAGE_MANAGE}),
     AnalystRole.VIEWER: frozenset(),
     AnalystRole.RESPONDER: frozenset(
         {AnalystPermission.REQUEST, AnalystPermission.INVESTIGATE, AnalystPermission.ARTIFACT_READ}
