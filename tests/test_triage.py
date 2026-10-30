@@ -30,6 +30,7 @@ def capabilities(platform="linux", **changes):
             "implemented_actions": list(COLLECT_ACTIONS),
             "allowed_actions": list(COLLECT_ACTIONS),
             "authenticated_command_channel": True,
+            "collection_acceptance_gate": True,
             "artifact_protocol": ARTIFACT_PROTOCOL,
             **changes,
         }
@@ -102,6 +103,7 @@ def test_critical_or_unclassified_cannot_be_configured_for_automatic_execution(a
         ({"mode": "off"}, "endpoint_not_enforcing"),
         ({"mode": "dry_run"}, "endpoint_not_enforcing"),
         ({"authenticated_command_channel": False}, "authenticated_command_channel_required"),
+        ({"collection_acceptance_gate": False}, "execution_policy_gate_required"),
         ({"artifact_protocol": None}, "signed_artifact_delivery_not_supported"),
     ],
 )
